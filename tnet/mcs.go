@@ -25,7 +25,6 @@ type multiChannel struct {
 func (m *MultiChannelStream) getBuffer(c byte) *tmem.ExpandingBuffer {
 	if m.buffer[c] == nil {
 		m.buffer[c] = tmem.NewExpandingBuffer()
-		m.buffer[c].Size = 3
 	}
 	return m.buffer[c]
 }
@@ -104,7 +103,8 @@ func (c *multiChannel) Write(b []byte) (written int, err error) {
 }
 
 func (c *multiChannel) Close() error {
-	return c.mcs.con.Close()
+	c.mcs.buffer[c.channel] = nil
+	return nil
 }
 
 func (c *multiChannel) LocalAddr() net.Addr {

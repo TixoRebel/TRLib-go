@@ -12,7 +12,7 @@ type node struct {
 type ExpandingBuffer struct {
 	head *node
 	tail *node
-	Size int
+	size int
 	writeLock* sync.Mutex
 	readLock* sync.Mutex
 	wrote* sync.Cond
@@ -103,10 +103,20 @@ func (e *ExpandingBuffer) ReadAll(data []byte) (read int) {
 }
 
 func (e *ExpandingBuffer) makeNode() (n *node) {
-	if e.Size == 0 { e.Size = 1024 }
+	if e.size == 0 { e.size = 1024 }
 	n = new(node)
-	n.data = make([]byte, e.Size)
+	n.data = make([]byte, e.size)
 	n.data = n.data[0:0]
 	
 	return
+}
+
+func (e *ExpandingBuffer) SetSize(size int) {
+	if size >= 0 {
+		e.size = size
+	}
+}
+
+func (e *ExpandingBuffer) GetSize() int {
+	return e.size
 }

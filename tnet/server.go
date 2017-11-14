@@ -6,21 +6,21 @@ import (
 )
 
 type Server struct {
-	net string
-	laddr string
+	network string
+	address string
 	handle func(p *MultiChannelStream)
 }
 
-func NewServer(net, laddr string, handle func(p *MultiChannelStream)) (s *Server) {
+func NewServer(network string, address string, handle func(p *MultiChannelStream)) (s *Server) {
 	s = new(Server)
-	s.net = net
-	s.laddr = laddr
+	s.network = network
+	s.address = address
 	s.handle = handle
 	return
 }
 
 func (s *Server) Start() error {
-	ln, err := net.Listen(s.net, s.laddr)
+	ln, err := net.Listen(s.network, s.address)
 	if err != nil {
 		log.Fatal(err)
 		return err
