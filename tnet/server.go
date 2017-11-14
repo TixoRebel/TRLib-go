@@ -6,12 +6,13 @@ import (
 )
 
 type Server struct {
-	network string
-	address string
-	handle func(p *MultiChannelStream)
+	network  string
+	address  string
+	handle   func(*Server, *MultiChannelStream)
+	listener net.Listener
 }
 
-func NewServer(network string, address string, handle func(p *MultiChannelStream)) (s *Server) {
+func NewServer(network string, address string, handle func(*Server, *MultiChannelStream)) (s *Server) {
 	s = new(Server)
 	s.network = network
 	s.address = address
@@ -20,23 +21,27 @@ func NewServer(network string, address string, handle func(p *MultiChannelStream
 }
 
 func (s *Server) Start() error {
-	ln, err := net.Listen(s.network, s.address)
+	var err error
+	s.listener, err = net.Listen(s.network, s.address)
 	if err != nil {
 		log.Fatal(err)
 		return err
 	}
 	for {
-		con, err := ln.Accept()
+		con, err := s.listener.Accept()
 		if err != nil {
-			log.Println(err)
-			continue
+			return err
 		}
 		go func() {
 			mcs := NewMultiChannelStream(con)
 			go mcs.Start()
 			
-			s.handle(mcs)
+			s.handle(s, mcs)
 		}()
 	}
 	return nil
+}
+
+func (s *Server) Close() error {
+	return s.listener.Close()
 }

@@ -10,8 +10,8 @@ import (
 
 type MultiChannelStream struct {
 	buffer [255]*tmem.ExpandingBuffer
-	channels [255]net.Conn
-	con net.Conn
+	channels [255]*AdvConn
+	con *AdvConn
 	lock sync.Mutex
 	readErr error
 	running bool
@@ -29,12 +29,12 @@ func (m *MultiChannelStream) getBuffer(c byte) *tmem.ExpandingBuffer {
 	return m.buffer[c]
 }
 
-func (m *MultiChannelStream) GetChannel(c byte) net.Conn {
+func (m *MultiChannelStream) GetChannel(c byte) *AdvConn {
 	if m.channels[c] == nil {
 		mc := new(multiChannel)
 		mc.channel = c
 		mc.mcs = m
-		m.channels[c] = mc
+		m.channels[c] = &AdvConn{mc}
 	}
 	return m.channels[c]
 }
@@ -42,25 +42,30 @@ func (m *MultiChannelStream) GetChannel(c byte) net.Conn {
 func (m *MultiChannelStream) Start() {
 	m.running = true
 	defer func() { m.con.Close(); m.running = false }()
-	
+
+	var size [2]byte
+
 	for {
-		channel := make([]byte, 1, 1)
-		if i, err := m.con.Read(channel); err != nil && i == 0 {
+		channel, err := m.con.ReadByte()
+		if err != nil {
 			return
 		}
-		size := make([]byte, 2, 2)
-		m.con.Read(size)
-		nsize := binary.BigEndian.Uint16(size)
+		m.con.Read(size[:])
+		nsize := binary.BigEndian.Uint16(size[:])
 		data := make([]byte, nsize, nsize)
 		m.con.Read(data)
-		m.getBuffer(channel[0]).Write(data)
+		m.getBuffer(channel).Write(data)
 	}
+}
+
+func (m *MultiChannelStream) Close() error {
+	return m.con.Close()
 }
 
 func NewMultiChannelStream(c net.Conn) (m *MultiChannelStream) {
 	m = new(MultiChannelStream)
 	m.running = false
-	m.con = c
+	m.con = &AdvConn{c}
 	return
 }
 
@@ -71,12 +76,13 @@ func (c *multiChannel) Read(b []byte) (int, error) {
 func (c *multiChannel) Write(b []byte) (written int, err error) {
 	c.mcs.lock.Lock()
 	defer c.mcs.lock.Unlock()
-	
+
 	toWrite := len(b)
-	
+	var sizeWrite [2]byte
+
 	for written < toWrite {
 		var i int
-		i, err = c.mcs.con.Write([]byte { c.channel })
+		err = c.mcs.con.WriteByte(c.channel)
 		if err != nil {
 			return
 		}
@@ -85,9 +91,8 @@ func (c *multiChannel) Write(b []byte) (written int, err error) {
 		if shouldWrite > 65535 {
 			shouldWrite = 65535
 		}
-		sizeWrite := make([]byte, 2, 2)
-		binary.BigEndian.PutUint16(sizeWrite, uint16(shouldWrite))
-		i, err = c.mcs.con.Write(sizeWrite)
+		binary.BigEndian.PutUint16(sizeWrite[:], uint16(shouldWrite))
+		i, err = c.mcs.con.Write(sizeWrite[:])
 		if err != nil {
 			return
 		}

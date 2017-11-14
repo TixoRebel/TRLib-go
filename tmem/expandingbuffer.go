@@ -33,18 +33,18 @@ func (e *ExpandingBuffer) Write(data []byte) {
 		e.head = e.makeNode()
 		e.tail = e.head
 	}
-	
+
 	for len(data) > 0 {
 		if cap(e.tail.data) == len(e.tail.data) {
 			e.tail.next = e.makeNode()
 			e.tail = e.tail.next
 		}
-		
+
 		i := copy(e.tail.data[len(e.tail.data):cap(e.tail.data)], data)
 		data = data[i:]
 		e.tail.data = e.tail.data[:i + len(e.tail.data)]
 	}
-	
+
 	e.wrote.Signal()
 }
 
@@ -53,13 +53,12 @@ func (e *ExpandingBuffer) Read(data []byte) (read int) {
 	defer e.readLock.Unlock()
 	e.writeLock.Lock()
 	defer e.writeLock.Unlock()
-	
-	
+
 	if e.head == nil {
 		e.head = e.makeNode()
 		e.tail = e.head
 	}
-	
+
 	read = 0
 	for read < cap(data) {
 		i := copy(data[read:], e.head.data)
@@ -70,7 +69,7 @@ func (e *ExpandingBuffer) Read(data []byte) (read int) {
 			e.head = e.head.next
 		}
 	}
-	
+
 	return
 }
 
@@ -79,12 +78,12 @@ func (e *ExpandingBuffer) ReadAll(data []byte) (read int) {
 	defer e.readLock.Unlock()
 	e.writeLock.Lock()
 	defer e.writeLock.Unlock()
-	
+
 	if e.head == nil {
 		e.head = e.makeNode()
 		e.tail = e.head
 	}
-	
+
 	read = 0
 	for read < cap(data) {
 		if len(e.head.data) == 0 {
@@ -98,7 +97,7 @@ func (e *ExpandingBuffer) ReadAll(data []byte) (read int) {
 		e.head.data = e.head.data[i:]
 		read += i
 	}
-	
+
 	return
 }
 
@@ -111,12 +110,12 @@ func (e *ExpandingBuffer) makeNode() (n *node) {
 	return
 }
 
-func (e *ExpandingBuffer) SetSize(size int) {
+func (e *ExpandingBuffer) SetNodeSize(size int) {
 	if size >= 0 {
 		e.size = size
 	}
 }
 
-func (e *ExpandingBuffer) GetSize() int {
+func (e *ExpandingBuffer) GetNodeSize() int {
 	return e.size
 }

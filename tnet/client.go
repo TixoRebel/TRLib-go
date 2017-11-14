@@ -8,10 +8,10 @@ import (
 type Client struct {
 	network string
 	address string
-	handle func(p *MultiChannelStream)
+	handle func(*Client, *MultiChannelStream)
 }
 
-func NewClient(network string, address string, handle func(p *MultiChannelStream)) (c *Client) {
+func NewClient(network string, address string, handle func(*Client, *MultiChannelStream)) (c *Client) {
 	c = new(Client)
 	c.network = network
 	c.address = address
@@ -28,6 +28,6 @@ func (c *Client) Connect() error {
 	
 	mcs := NewMultiChannelStream(con)
 	go mcs.Start()
-	c.handle(mcs)
+	c.handle(c, mcs)
 	return nil
 }
