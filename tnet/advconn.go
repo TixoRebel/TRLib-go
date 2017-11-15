@@ -139,7 +139,7 @@ func (a *AdvConn) ReadRune() (rune, error) {
 	return rune(b), e
 }
 
-func (a *AdvConn) WriteNum(n uint64) error {
+func (a *AdvConn) WriteNum(n uint64) (int, error) {
 	var buf [10]byte
 	i := 0
 	for n > 0x7F {
@@ -149,7 +149,7 @@ func (a *AdvConn) WriteNum(n uint64) error {
 	}
 	buf[i] = uint8(n) & 0x7F
 	_, err := a.Write(buf[:i + 1])
-	return err
+	return i + 1, err
 }
 
 func (a *AdvConn) ReadNum() (uint64, error) {
