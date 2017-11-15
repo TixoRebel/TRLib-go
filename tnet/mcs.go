@@ -51,12 +51,11 @@ func (m *MultiChannelStream) Start() error {
 		if err != nil {
 			return err
 		}
-		data := make([]byte, nsize, nsize)
-		_, err = m.con.Read(data)
+
+		_, err = m.getBuffer(channel).WriteDirect(int(nsize), m.con.Read)
 		if err != nil {
 			return err
 		}
-		m.getBuffer(channel).Write(data)
 	}
 }
 

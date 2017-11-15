@@ -48,6 +48,42 @@ func (e *ExpandingBuffer) Write(data []byte) {
 	e.wrote.Signal()
 }
 
+func (e *ExpandingBuffer) WriteDirect(length int, read func([]byte) (int, error)) (int, error) {
+	e.writeLock.Lock()
+	defer e.writeLock.Unlock()
+	if e.head == nil {
+		e.head = e.makeNode()
+		e.tail = e.head
+	}
+
+	wrote := 0
+
+	for wrote < length {
+		if cap(e.tail.data) == len(e.tail.data) {
+			e.tail.next = e.makeNode()
+			e.tail = e.tail.next
+		}
+
+
+		sz := len(e.tail.data) + length - wrote
+		if sz > cap(e.tail.data) {
+			sz = cap(e.tail.data)
+		}
+		i, err := read(e.tail.data[len(e.tail.data):sz])
+
+		wrote += i
+
+		e.tail.data = e.tail.data[:i + len(e.tail.data)]
+
+		if err != nil {
+			return wrote, nil
+		}
+	}
+
+	e.wrote.Signal()
+	return wrote, nil
+}
+
 func (e *ExpandingBuffer) Read(data []byte) (read int) {
 	e.readLock.Lock()
 	defer e.readLock.Unlock()
