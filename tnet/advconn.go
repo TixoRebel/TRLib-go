@@ -73,7 +73,7 @@ func (a AdvConn) WriteUInt32(i uint32) (int, error) {
 func (a AdvConn) ReadUInt32() (uint32, error) {
 	var buf [4]byte
 	i, e := a.Read(buf[:])
-	if i != 2 || e != nil {
+	if i != 4 || e != nil {
 		return 0, e
 	}
 	return binary.BigEndian.Uint32(buf[:]), nil
@@ -97,7 +97,7 @@ func (a AdvConn) WriteUInt64(i uint64) (int, error) {
 func (a AdvConn) ReadUInt64() (uint64, error) {
 	var buf [8]byte
 	i, e := a.Read(buf[:])
-	if i != 2 || e != nil {
+	if i != 8 || e != nil {
 		return 0, e
 	}
 	return binary.BigEndian.Uint64(buf[:]), nil
