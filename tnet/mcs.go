@@ -3,7 +3,6 @@ package tnet
 import (
 	"net"
 	"sync"
-	"encoding/binary"
 	"time"
 	"trlib/tmem"
 )
@@ -39,21 +38,24 @@ func (m *MultiChannelStream) GetChannel(c byte) *AdvConn {
 	return m.channels[c]
 }
 
-func (m *MultiChannelStream) Start() {
+func (m *MultiChannelStream) Start() error {
 	m.running = true
 	defer func() { m.con.Close(); m.running = false }()
-
-	var size [2]byte
 
 	for {
 		channel, err := m.con.ReadByte()
 		if err != nil {
-			return
+			return err
 		}
-		m.con.Read(size[:])
-		nsize := binary.BigEndian.Uint16(size[:])
+		nsize, err := m.con.ReadUInt16()
+		if err != nil {
+			return err
+		}
 		data := make([]byte, nsize, nsize)
-		m.con.Read(data)
+		_, err = m.con.Read(data)
+		if err != nil {
+			return err
+		}
 		m.getBuffer(channel).Write(data)
 	}
 }
@@ -70,7 +72,7 @@ func NewMultiChannelStream(c net.Conn) (m *MultiChannelStream) {
 }
 
 func (c *multiChannel) Read(b []byte) (int, error) {
-	return c.mcs.getBuffer(c.channel).ReadAll(b), c.mcs.readErr
+	return c.mcs.getBuffer(c.channel).Read(b), c.mcs.readErr
 }
 
 func (c *multiChannel) Write(b []byte) (written int, err error) {
@@ -78,7 +80,6 @@ func (c *multiChannel) Write(b []byte) (written int, err error) {
 	defer c.mcs.lock.Unlock()
 
 	toWrite := len(b)
-	var sizeWrite [2]byte
 
 	for written < toWrite {
 		var i int
@@ -88,11 +89,10 @@ func (c *multiChannel) Write(b []byte) (written int, err error) {
 		}
 		
 		shouldWrite := toWrite - written
-		if shouldWrite > 65535 {
-			shouldWrite = 65535
+		if shouldWrite > 0xFFFF {
+			shouldWrite = 0xFFFF
 		}
-		binary.BigEndian.PutUint16(sizeWrite[:], uint16(shouldWrite))
-		i, err = c.mcs.con.Write(sizeWrite[:])
+		i, err = c.mcs.con.WriteUInt16(uint16(shouldWrite))
 		if err != nil {
 			return
 		}

@@ -10,6 +10,7 @@ type Server struct {
 	address  string
 	handle   func(*Server, *MultiChannelStream)
 	listener net.Listener
+	mcs *MultiChannelStream
 }
 
 func NewServer(network string, address string, handle func(*Server, *MultiChannelStream)) (s *Server) {
@@ -35,13 +36,16 @@ func (s *Server) Start() error {
 		go func() {
 			mcs := NewMultiChannelStream(con)
 			go mcs.Start()
-			
+			s.mcs = mcs
+
 			s.handle(s, mcs)
 		}()
 	}
 	return nil
 }
 
-func (s *Server) Close() error {
-	return s.listener.Close()
+func (s *Server) Close() (e1 error, e2 error) {
+	e1 = s.mcs.Close()
+	e2 = s.listener.Close()
+	return
 }

@@ -61,31 +61,6 @@ func (e *ExpandingBuffer) Read(data []byte) (read int) {
 
 	read = 0
 	for read < cap(data) {
-		i := copy(data[read:], e.head.data)
-		e.head.data = e.head.data[i:]
-		read += i
-		if len(e.head.data) == 0 {
-			if e.head.next == nil { return }
-			e.head = e.head.next
-		}
-	}
-
-	return
-}
-
-func (e *ExpandingBuffer) ReadAll(data []byte) (read int) {
-	e.readLock.Lock()
-	defer e.readLock.Unlock()
-	e.writeLock.Lock()
-	defer e.writeLock.Unlock()
-
-	if e.head == nil {
-		e.head = e.makeNode()
-		e.tail = e.head
-	}
-
-	read = 0
-	for read < cap(data) {
 		if len(e.head.data) == 0 {
 			if e.head.next == nil {
 				e.wrote.Wait()

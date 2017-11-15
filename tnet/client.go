@@ -4,30 +4,14 @@ import (
 	"net"
 	"log"
 )
-
-type Client struct {
-	network string
-	address string
-	handle func(*Client, *MultiChannelStream)
-}
-
-func NewClient(network string, address string, handle func(*Client, *MultiChannelStream)) (c *Client) {
-	c = new(Client)
-	c.network = network
-	c.address = address
-	c.handle = handle
-	return
-}
-
-func (c *Client) Connect() error {
-	con, err := net.Dial(c.network, c.address)
+func Connect(network string, address string) (*MultiChannelStream, error) {
+	con, err := net.Dial(network, address)
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 	
 	mcs := NewMultiChannelStream(con)
 	go mcs.Start()
-	c.handle(c, mcs)
-	return nil
+	return mcs, nil
 }

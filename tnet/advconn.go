@@ -157,7 +157,7 @@ func (a AdvConn) ReadNum() (uint64, error) {
 		if e != nil {
 			return 0, e
 		}
-		n |= uint64((b & 0x7F)) << (7 * i)
+		n |= uint64(b & 0x7F) << (7 * i)
 		if b & 0x80 == 0 {
 			return n, nil
 		}
