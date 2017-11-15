@@ -65,13 +65,13 @@ func (a AdvConn) ReadInt16() (int16, error) {
 }
 
 func (a AdvConn) WriteUInt32(i uint32) (int, error) {
-	var buf [2]byte
+	var buf [4]byte
 	binary.BigEndian.PutUint32(buf[:], i)
 	return a.Write(buf[:])
 }
 
 func (a AdvConn) ReadUInt32() (uint32, error) {
-	var buf [2]byte
+	var buf [4]byte
 	i, e := a.Read(buf[:])
 	if i != 2 || e != nil {
 		return 0, e
@@ -89,13 +89,13 @@ func (a AdvConn) ReadInt32() (int32, error) {
 }
 
 func (a AdvConn) WriteUInt64(i uint64) (int, error) {
-	var buf [2]byte
+	var buf [8]byte
 	binary.BigEndian.PutUint64(buf[:], i)
 	return a.Write(buf[:])
 }
 
 func (a AdvConn) ReadUInt64() (uint64, error) {
-	var buf [2]byte
+	var buf [8]byte
 	i, e := a.Read(buf[:])
 	if i != 2 || e != nil {
 		return 0, e
