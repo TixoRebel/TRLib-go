@@ -64,7 +64,6 @@ func (e *ExpandingBuffer) WriteDirect(length int, read func([]byte) (int, error)
 			e.tail = e.tail.next
 		}
 
-
 		sz := len(e.tail.data) + length - wrote
 		if sz > cap(e.tail.data) {
 			sz = cap(e.tail.data)

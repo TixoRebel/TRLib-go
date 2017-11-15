@@ -140,14 +140,16 @@ func (a AdvConn) ReadRune() (rune, error) {
 }
 
 func (a AdvConn) WriteNum(n uint64) error {
+	var buf [10]byte
+	i := 0
 	for n > 0x7F {
-		e := a.WriteByte(uint8(n) | 0x80)
-		if e != nil {
-			return e
-		}
+		buf[i] = uint8(n) | 0x80
 		n >>= 7
+		i++
 	}
-	return a.WriteByte(uint8(n) & 0x7F)
+	buf[i] = uint8(n) & 0x7F
+	_, err := a.Write(buf[:i + 1])
+	return err
 }
 
 func (a AdvConn) ReadNum() (uint64, error) {
