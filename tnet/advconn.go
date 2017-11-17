@@ -165,3 +165,26 @@ func (a *AdvConn) ReadNum() (uint64, error) {
 		}
 	}
 }
+
+func (a *AdvConn) WriteString(str string) (int, error) {
+	buf := []byte(str)
+	i, err := a.WriteNum(uint64(len(buf)))
+	if err != nil {
+		return i, err
+	}
+	j, err := a.Write(buf)
+	return i + j, err
+}
+
+func (a *AdvConn) ReadString() (string, error) {
+	n, err := a.ReadNum()
+	if err != nil {
+		return "", err
+	}
+	buf := make([]byte, n)
+	_, err = a.Read(buf)
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
+}
