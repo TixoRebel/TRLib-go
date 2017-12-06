@@ -2,18 +2,16 @@ package tnet
 
 import (
 	"net"
-	"log"
 )
 
 type Server struct {
-	network  string
-	address  string
-	handle   func(*Server, *MultiChannelStream)
+	network string
+	address string
+	handle func(*Server, net.Conn)
 	listener net.Listener
-	mcs *MultiChannelStream
 }
 
-func NewServer(network string, address string, handle func(*Server, *MultiChannelStream)) (s *Server) {
+func NewServer(network string, address string, handle func(*Server, net.Conn)) (s *Server) {
 	s = new(Server)
 	s.network = network
 	s.address = address
@@ -25,7 +23,6 @@ func (s *Server) Start() error {
 	var err error
 	s.listener, err = net.Listen(s.network, s.address)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 	for {
@@ -34,18 +31,13 @@ func (s *Server) Start() error {
 			return err
 		}
 		go func() {
-			mcs := NewMultiChannelStream(con)
-			go mcs.Start()
-			s.mcs = mcs
-
-			s.handle(s, mcs)
+			s.handle(s, con)
 		}()
 	}
 	return nil
 }
 
 func (s *Server) Close() (e1 error, e2 error) {
-	e1 = s.mcs.Close()
 	e2 = s.listener.Close()
 	return
 }
